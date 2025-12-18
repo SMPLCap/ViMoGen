@@ -1,0 +1,24 @@
+# Core dependencies
+numpy
+tqdm
+
+# Configuration
+omegaconf
+easydict
+
+# Deep Learning
+diffusers>=0.31.0
+transformers>=4.40.0
+safetensors
+
+# Huggingface tokenizers
+tokenizers>=0.19.0
+
+# Logging and visualization
+tensorboard
+
+# File utilities
+natsort
+
+# Body modeling
+smplx

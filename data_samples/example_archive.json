@@ -1,0 +1,22 @@
+[
+    {
+        "sample_id": 0,
+        "prompt": "Full-body shot, stable camera, side view. A woman in a grey tracksuit stands in a minimalist studio with a soft white backdrop. She gracefully steps back with her right foot, her eyes following the motion as she lowers herself into a seated position on a simple wooden chair. Her back remains straight, and after a momentary pause, she engages her core and rises smoothly without using the chair's arms, showcasing her strength and balance in the seamless movement.",
+        "prompt_wanvideot5_embed_path": "./data_samples/text_embeddings/prompt/0.pt"
+    },
+    {
+        "sample_id": 1,
+        "prompt": "A woman in a simple grey tracksuit stands on a grassy park lawn with a clear blue sky as the backdrop. She positions a bright yellow hula hoop around her waist, feet firmly planted shoulder-width apart. With a gentle shift of her weight, she begins a rhythmic swaying motion, her hips moving side to side. The hula hoop spins smoothly around her midsection, creating a captivating circular dance. Her arms are relaxed at her sides, occasionally lifting slightly to help maintain her balance.",
+        "prompt_wanvideot5_embed_path": "./data_samples/text_embeddings/prompt/1.pt"
+    },
+    {
+        "sample_id": 2,
+        "prompt": "The person grips the potato masher firmly, positioning it over the boiled potatoes. With a decisive downward motion, they press into the potatoes, applying even pressure. The masher twists slightly, breaking the potatoes into smaller pieces. They repeat the motion rhythmically, ensuring a smooth, creamy texture, while maintaining a steady, controlled pace throughout the process.",
+        "prompt_wanvideot5_embed_path": "./data_samples/text_embeddings/prompt/2.pt"
+    },
+    {
+        "sample_id": 3,
+        "prompt": "Full-body shot, stable camera, angled side view. A person in a grey tracksuit approaches a sturdy metal ladder set against a plain white studio wall. The side angle captures their determined expression as they place one foot on the bottom rung, hands gripping the ladder's sides securely. With deliberate and steady movements, they ascend, each step calculated and balanced. Their eyes remain focused upward, showcasing their aligned posture and smoothly engaging muscles. They reach the top with confidence and poise, pausing momentarily to take in the view.",
+        "prompt_wanvideot5_embed_path": "./data_samples/text_embeddings/prompt/3.pt"
+    }
+]

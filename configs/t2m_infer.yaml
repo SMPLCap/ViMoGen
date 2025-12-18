@@ -1,0 +1,84 @@
+experiment:
+  result_dir: ./exp/t2m_infer
+  model_name: wanvideotm2m_1.3b
+  load_pretrain: true
+  auto_resume: true
+  resume_path: null
+  max_steps: 20000
+  max_epoch: 100
+  global_seed: 42
+  text_encoder_class_name_list:
+  - T5
+  use_vae: true
+  ema_every: 1
+  ema_decay: 0.9999
+  log_every: 5
+  checkpoint_every: 5000
+  visualize_every: 5000
+  use_torch_compile: false
+  use_dpm_solver: true
+  cfg_scale: 5.0
+  use_dynamic_cfg: 0
+  loglevel: DEBUG
+  bucket_config_type: null
+  train_target:
+  - transformer
+  dataset_name: WanMotionTensorDatasetWiRefMotion
+model_path:
+  wanvideotm2m_1.3b: ./checkpoints/Wan2.1-T2V-1.3B
+model:
+  rope_mode: naive
+  dense_interval: 1
+  force_no_sincos_embed: true
+  i2v_mode: 0
+  in_channels: 276
+  ref_motion_dim: 138
+  load_path: ./checkpoints/model.pt
+solver:
+  lr: 0.0002
+  weight_decay: 0.0001
+  betas:
+  - 0.9
+  - 0.95
+  warmup_steps: 100
+  grad_clip: 0.1
+precision:
+  mixed_precision: bf16
+  grad_precision: fp32
+  vae_precision: bf16
+  text_precision: bf16
+parallel:
+  tp_size: 1
+  dp_strategy:
+    transformer: op_grad
+dataloader:
+  local_batch: 256
+  test_local_batch: 64
+  global_batch: null
+  global_seed: 0
+  num_workers: 8
+dataset:
+  text_key: prompt
+  train_json_file_list: 
+  - ./data_samples/example_archive.json  # dummy path, will not be used in inference
+  duplicate_meta: [1]
+  test_json_file_list:
+  - ./data_samples/example_archive.json
+  motion_mean_path: ./data/meta_info/mean.npy
+  motion_std_path: ./data/meta_info/std.npy
+  min_motion_length: 40
+  max_motion_length: 200
+  null_context_path: ./models/transformer/wan/context_null_padded.pth
+  uncond_prob: 0.5
+  use_global_orient: true
+  t2m_prob_low_quality: 0.4
+  t2m_prob_default: 0.8
+ref_motion_corruption:
+  enable: true
+  corrupt_rate_range: [0.0, 0.4]
+  noise_scale_range: [0.05, 0.15]
+  replace_noise_rate_range: [0.03, 0.08]
+  temporal_dropout_rate: 0.02
+  jitter_strength: 0.3
+
+mode: train
