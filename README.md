@@ -1,15 +1,23 @@
 # The Quest for Generalizable Motion Generation: Data, Model, and Evaluation
 
-[![arXiv](https://img.shields.io/badge/arXiv-PDF-red)](https://arxiv.org/abs/2510.26794)
+[![arXiv](https://img.shields.io/badge/arXiv-PDF-red?logo=arxiv)](https://arxiv.org/abs/2510.26794)
 [![HuggingFace](https://img.shields.io/badge/HuggingFace-Paper-orange)](https://huggingface.co/papers/2510.26794)
 [![MBench_leaderboard](https://img.shields.io/badge/%F0%9F%A4%97%20_MBench-Leaderboard-ffc107?color=ffc107&logoColor=white)](https://huggingface.co/spaces/wruisi/MBench_leaderboard)
-[![ViMoGen-228K](https://img.shields.io/badge/%F0%9F%A4%97%20_ViMoGen-228K-Data-ffc107?color=ffc107&logoColor=white)](https://huggingface.co/datasets/wruisi/ViMoGen-228K)
+[![ViMoGen-228K](https://img.shields.io/badge/%F0%9F%A4%97%20_ViMoGen228K-Data-ffc107?color=ffc107&logoColor=white)](https://huggingface.co/datasets/wruisi/ViMoGen-228K)
 
 ## Overview
 
 ![Teaser](https://github.com/oneScotch/ViMoGen/blob/main/assets/teaser.jpg)
 
-This repository contains the official implementation of **ViMoGen**, a Diffusion Transformer for generalizable motion generation supporting both Text-to-Motion (T2M) and Text/Motion-to-Motion (TM2M) generation.
+This is the official repository for **[The Quest for Generalizable Motion Generation: Data, Model, and Evaluation](https://huggingface.co/papers/2510.26794)**.
+
+The repo provides a unified framework for **generalizable motion generation**, including both modeling and evaluation:
+
+- **ViMoGen Model**: A **Diffusion Transformer** for generalizable motion generation, supporting  **Text-to-Motion (T2M)** and **Text/Motion-to-Motion (TM2M)**  
+
+- **MBench Benchmark**: A comprehensive evaluation benchmark that decomposes motion generation into **nine dimensions** across three pillars:  **Motion Generalization**, **Motion–Condition Consistency**, and **Motion Quality**.
+
+Together, ViMoGen and MBench enable end-to-end research on scalable and reliable motion generation.
 
 ## Introduction
 
@@ -17,10 +25,13 @@ Despite recent advances in 3D human motion generation (MoGen) on standard benchm
 
 Motivated by this observation, we present **ViMoGen**, a comprehensive framework that systematically transfers knowledge from ViGen to MoGen across three key pillars: **data**, **modeling**, and **evaluation**. 
 
-*   **ViMoGen-228K Dataset**: A large-scale dataset comprising 228,000 high-quality motion samples that integrates high-fidelity optical MoCap data with semantically annotated motions from web videos and synthesized samples.
+*   **[ViMoGen-228K Dataset](https://huggingface.co/datasets/wruisi/ViMoGen-228K)**: A large-scale dataset comprising 228,000 high-quality motion samples that integrates high-fidelity optical MoCap data with semantically annotated motions from web videos and synthesized samples.
 *   **ViMoGen Model**: A flow-matching-based diffusion transformer that unifies priors from MoCap data and ViGen models through gated multimodal conditioning.
 *   **MBench Benchmark**: A hierarchical benchmark designed for fine-grained evaluation across motion quality, prompt fidelity, and generalization ability.
 
+## News
+- [2025-12-19] We have released the ViMoGen-DiT pretrained weights along with the core inference pipeline.
+- [2025-12-18] We have released the [ViMoGen-228K Dataset](https://huggingface.co/datasets/wruisi/ViMoGen-228K) and [MBench leaderboard](https://huggingface.co/spaces/wruisi/MBench_leaderboard).
 ## Release Plan
 
 - [x] **Inference Code**: Core inference pipeline is released.
