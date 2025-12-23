@@ -2,10 +2,12 @@
 
 [![arXiv](https://img.shields.io/badge/arXiv-PDF-red)](https://arxiv.org/abs/2510.26794)
 [![HuggingFace](https://img.shields.io/badge/HuggingFace-Paper-orange)](https://huggingface.co/papers/2510.26794)
+[![MBench_leaderboard](https://img.shields.io/badge/%F0%9F%A4%97%20_MBench-Leaderboard-ffc107?color=ffc107&logoColor=white)](https://huggingface.co/spaces/wruisi/MBench_leaderboard)
+[![ViMoGen-228K](https://img.shields.io/badge/%F0%9F%A4%97%20_ViMoGen-228K-Data-ffc107?color=ffc107&logoColor=white)](https://huggingface.co/datasets/wruisi/ViMoGen-228K)
 
 ## Overview
 
-![Teaser](./assets/teaser.jpg)
+![Teaser](https://github.com/oneScotch/ViMoGen/blob/main/assets/teaser.jpg)
 
 This repository contains the official implementation of **ViMoGen**, a Diffusion Transformer for generalizable motion generation supporting both Text-to-Motion (T2M) and Text/Motion-to-Motion (TM2M) generation.
 
