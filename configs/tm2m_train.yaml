@@ -1,10 +1,10 @@
 experiment:
-  result_dir: ./exp/tm2m
+  result_dir: ./exp/tm2m_reproduce
   model_name: wanvideotm2m_1.3b
   load_pretrain: true
   auto_resume: true
   resume_path: null
-  max_steps: 20000
+  max_steps: 40000
   max_epoch: 100
   global_seed: 42
   text_encoder_class_name_list:
@@ -52,7 +52,7 @@ parallel:
   dp_strategy:
     transformer: op_grad
 dataloader:
-  local_batch: 256
+  local_batch: 128
   test_local_batch: 64
   global_batch: null
   global_seed: 0
@@ -60,7 +60,7 @@ dataloader:
 dataset:
   text_key: video_text_annot
   train_json_file_list: 
-  - ./data/meta_info/train_archive.json  # TBD
+  - ./data/meta_info/ViMoGen-228K_train.json
   duplicate_meta: [1]
   test_json_file_list:
   - ./data/meta_info/MBench_final.json

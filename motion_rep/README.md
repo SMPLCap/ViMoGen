@@ -29,3 +29,91 @@ Because velocities use frame `t+1`, the motion sequence has one fewer frame than
 
 ## Notes
 - All stored motions are **global/canonicalized** (pelvis-centered, facing alignment handled upstream in `canonicalize_motion` + `collect_motion_rep_DART`).
+
+---
+
+## Convert HMR Output to Motion Representation
+
+Use `convert_hmr_to_motion.py` to convert HMR (Human Mesh Recovery) algorithm outputs to our 276-dim motion format.
+
+**HMR** refers to visual motion capture algorithms that recover human mesh from video, such as SMPLest-X, CameraHMR, 4DHumans, etc. Note that the parameters should be in the SMPLX format if accurate overlay with the original video is desired. Otherwise, you may need to modify the `retarget_motion.py` script and replace the smplx_root with smpl(h)_root.
+
+### Input Requirements
+
+The input `.pt` file should contain:
+
+**Required:**
+
+| Key | Shape | Description |
+| --- | ----- | ----------- |
+| `global_orient` | (T, 3) | Root orientation in axis-angle |
+| `body_pose` | (T, 63) | Body pose (21 joints × 3) in axis-angle |
+| `transl` | (T, 3) | Root translation |
+
+**Optional** (for reprojection to original video):
+
+| Key | Shape | Description |
+| --- | ----- | ----------- |
+| `focal_length` | scalar or (1,) | Camera focal length |
+| `width` | scalar or (1,) | Image width |
+| `height` | scalar or (1,) | Image height |
+
+### Output Format
+
+The output `.pt` file contains:
+
+| Key | Shape | Description |
+| --- | ----- | ----------- |
+| `motion` | (T-1, 276) | Motion representation (see layout above) |
+| `intrinsic` | (3, 3) | Camera intrinsic matrix (identity if not provided) |
+| `extrinsic` | (4, 4) | Computed camera extrinsic matrix for reprojection (identity if not provided) |
+
+### Usage
+
+```bash
+# Basic usage
+python motion_rep/convert_hmr_to_motion.py \
+    --input /path/to/hmr_output.pt \
+    --output /path/to/motion.pt
+
+# Full options
+python motion_rep/convert_hmr_to_motion.py \
+    --input /path/to/hmr_output.pt \
+    --output /path/to/motion.pt \
+    --smplx_model_path ./data/body_models/smplx \
+    --device cuda:0
+```
+
+### Visualize Converted Motion
+
+Use `motion_checker.py` to visualize the converted motion:
+
+```bash
+# Render depth video only
+python motion_rep/motion_checker.py \
+    --motion_file /path/to/motion.pt \
+    --output_dir /path/to/output
+
+# Render overlay on original video
+python motion_rep/motion_checker.py \
+    --motion_file /path/to/motion.pt \
+    --output_dir /path/to/output \
+    --video_file /path/to/original_video.mp4
+
+# Full options
+python motion_rep/motion_checker.py \
+    --motion_file /path/to/motion.pt \
+    --output_dir /path/to/output \
+    --video_file /path/to/original_video.mp4 \
+    --smpl_type smplx \
+    --smpl_model_path ./data/body_models/smplx \
+    --batch_size 24 \
+    --device cuda:0 \
+    --verbose
+```
+
+---
+
+## Custom Motion Preparation
+
+For preparing custom reference motions from videos (video generation → HMR extraction → motion conversion → quality gating), see **[CUSTOM_MOTION.md](CUSTOM_MOTION.md)**.

@@ -18,7 +18,6 @@ from .retarget_motion import (
     collect_motion_rep_DART,
     get_transform_DART,
     motion_rep_to_SMPL,
-    perspective_projection,
     process_hmr_motion,
 )
 from .motion_checker import motion_vis
@@ -39,7 +38,6 @@ __all__ = [
     "collect_motion_rep_DART",
     "get_transform_DART",
     "motion_rep_to_SMPL",
-    "perspective_projection",
     "process_hmr_motion",
     "motion_vis",
 ]

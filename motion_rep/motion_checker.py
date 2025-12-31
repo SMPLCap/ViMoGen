@@ -1,37 +1,62 @@
-"""
-Standalone motion visualization utilities extracted from the original
-depth_render.motion_checker so we can avoid the external dependency.
-
-This implements the motion_vis entrypoint used by TrainerBase.save_motion_dict
-and keeps the same signature for drop-in use.
-"""
-
 from __future__ import annotations
 
 import argparse
 import os
 import subprocess
+import sys
 import time
+from pathlib import Path
 from typing import Optional, Tuple
 
+import cv2
 import numpy as np
 import torch
-from smplx import SMPLX
+from smplx import SMPLH, SMPLX
 from pytorch3d.renderer import FoVPerspectiveCameras
 from pytorch3d.renderer.mesh import rasterize_meshes
 from pytorch3d.structures import Meshes
 
-from .retarget_motion import motion_rep_to_SMPL
-from .rotation_transform import rot6d_to_mat3x3
+try:
+    from .retarget_motion import motion_rep_to_SMPL
+    from .rotation_transform import rot6d_to_mat3x3
+except ImportError:
+    script_dir = Path(__file__).resolve().parent
+    parent_dir = script_dir.parent
+    if str(parent_dir) not in sys.path:
+        sys.path.insert(0, str(parent_dir))
+    from motion_rep.retarget_motion import motion_rep_to_SMPL
+    from motion_rep.rotation_transform import rot6d_to_mat3x3
 
 
-def _default_smplx_model_path() -> str:
-    """Resolve SMPLX model path with a sensible default."""
-    env_path = os.environ.get("SMPLX_MODEL_PATH")
-    if env_path:
-        return env_path
-    # Fallback to a project-local path so open-source users can place SMPLX there.
-    return os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "data", "body_models", "smplx"))
+def _default_smpl_model_path(smpl_type: str) -> str:
+    """Resolve SMPL/SMPLX family model path with sensible defaults.
+
+    Env overrides:
+      - SMPLX_MODEL_PATH for smplx
+      - SMPLH_MODEL_PATH for smplh
+    Fallback to project-local body_models/{smpl_type}
+    """
+    if smpl_type == "smplx":
+        env_path = os.environ.get("SMPLX_MODEL_PATH")
+        fallback = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "data", "body_models", "smplx"))
+    elif smpl_type == "smplh":
+        env_path = os.environ.get("SMPLH_MODEL_PATH")
+        fallback = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "data", "body_models", "smplh"))
+    else:
+        raise ValueError(f"Unsupported smpl_type: {smpl_type}")
+    return env_path or fallback
+
+
+def get_video_properties(video_path: str) -> Tuple[int, int, int]:
+    """Extract width, height, and fps from video file."""
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError(f"Cannot open video file: {video_path}")
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    cap.release()
+    return width, height, fps
 
 
 def get_R_T(
@@ -214,6 +239,96 @@ def rendering_batches(
     return depth_maps
 
 
+def render_and_save_overlay(
+    verts: torch.Tensor,
+    faces: torch.Tensor,
+    R: torch.Tensor,
+    T: torch.Tensor,
+    rgb_video_path: str,
+    width: int,
+    height: int,
+    focal: float,
+    batch_size: int = 24,
+    fps: int = 60,
+    output_path: Optional[str] = None,
+    verbose: bool = False,
+) -> str:
+    """Render depth and overlay on RGB video."""
+    # Render depth maps
+    start_time = time.time()
+    depth_maps = rendering_batches(
+        verts, faces, width, height, focal, R, T, batch_size=batch_size, render_multiple=True, reverse_axis=False
+    )
+    render_time = time.time() - start_time
+    if verbose:
+        print(f"Rendering time: {render_time:.2f}s")
+
+    # Visualize depth
+    start_time = time.time()
+    depth_images = visualize_depth_map(depth_maps)
+    vis_time = time.time() - start_time
+    if verbose:
+        print(f"Visualization time: {vis_time:.2f}s")
+
+    # Read RGB video and overlay
+    start_time = time.time()
+    cap = cv2.VideoCapture(rgb_video_path)
+    if not cap.isOpened():
+        raise ValueError(f"Cannot open RGB video: {rgb_video_path}")
+
+    # Create output directory if needed
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    # Use ffmpeg for better codec compatibility (H.264)
+    ffmpeg_command = [
+        "ffmpeg",
+        "-loglevel", "quiet",
+        "-y",
+        "-f", "rawvideo",
+        "-vcodec", "rawvideo",
+        "-pix_fmt", "bgr24",
+        "-s", f"{width}x{height}",
+        "-r", str(fps),
+        "-i", "-",
+        "-an",
+        "-vcodec", "libx264",
+        "-pix_fmt", "yuv420p",
+        output_path,
+    ]
+    ffmpeg_proc = subprocess.Popen(ffmpeg_command, stdin=subprocess.PIPE)
+
+    frame_idx = 0
+    total_frames = len(depth_images)
+    while cap.isOpened() and frame_idx < total_frames:
+        ret, rgb_frame = cap.read()
+        if not ret:
+            break
+
+        # Resize RGB frame if needed
+        if rgb_frame.shape[:2] != (height, width):
+            rgb_frame = cv2.resize(rgb_frame, (width, height))
+
+        # Convert depth to 3-channel for overlay
+        depth_vis = cv2.cvtColor(depth_images[frame_idx], cv2.COLOR_GRAY2BGR)
+
+        # Overlay: blend depth with RGB (50% alpha)
+        overlay = cv2.addWeighted(rgb_frame, 0.5, depth_vis, 0.5, 0)
+        ffmpeg_proc.stdin.write(overlay.tobytes())
+        frame_idx += 1
+
+    cap.release()
+    ffmpeg_proc.stdin.close()
+    ffmpeg_proc.wait()
+    save_time = time.time() - start_time
+    if verbose:
+        print(f"Overlay saving time: {save_time:.2f}s")
+        print(f"Total processing time: {render_time + vis_time + save_time:.2f}s")
+
+    return output_path
+
+
 def render_and_save(
     verts: torch.Tensor,
     faces: torch.Tensor,
@@ -299,13 +414,20 @@ def motion_vis(
     verbose: bool = False,
     do_visulize: bool = True,
     motion_data: Optional[torch.Tensor] = None,
-    fetch_dict: bool = True,
+    video_file: Optional[str] = None,
     smpl_model_path: Optional[str] = None,
+    smpl_type: str = "smplx",
 ):
     """
     Visualize motion by rendering a depth video.
     This mirrors depth_render.motion_checker.motion_vis with a narrowed dependency surface.
     """
+    # Override H, W, fps from video if provided
+    if video_file is not None and os.path.exists(video_file):
+        W, H, fps = get_video_properties(video_file)
+        if verbose:
+            print(f"Using video properties: W={W}, H={H}, fps={fps}")
+
     if motion_data is None:
         motion_data = torch.load(motion_file, map_location=device, weights_only=True)
     if motion_name is None and motion_file is not None:
@@ -313,8 +435,6 @@ def motion_vis(
     elif motion_name is None:
         motion_name = "motion"
 
-    if not fetch_dict and isinstance(motion_data, dict):
-        motion_data = motion_data["motion"]
     if isinstance(motion_data, dict):
         if verbose:
             print("Reading training data")
@@ -335,13 +455,7 @@ def motion_vis(
     else:
         if verbose:
             print("Reading testing data")
-        if motion_data.shape[1] == 276 + 9:
-            motion = motion_data[:, :276]
-            extrinsic = motion_data[:, 276:]
-            R, T = extrinsic.split([6, 3], dim=-1)
-            R = rot6d_to_mat3x3(R)
-            smpl_params, joints = motion_rep_to_SMPL(motion, recover_from_velocity)
-        elif motion_data.shape[1] == 276:
+        if motion_data.shape[1] == 276:
             motion = motion_data
             smpl_params, joints = motion_rep_to_SMPL(motion, recover_from_velocity)
             R, T = get_R_T(joints, zero_trans=zero_trans)
@@ -359,14 +473,21 @@ def motion_vis(
         return smpl_params, joints
 
     # Create SMPL model
+    smpl_type = smpl_type.lower()
+    if smpl_type not in {"smplx", "smplh"}:
+        raise ValueError(f"Unsupported smpl_type: {smpl_type}")
+    if verbose:
+        print(f"Using SMPL type: {smpl_type}")
+
+    model_path = smpl_model_path or _default_smpl_model_path(smpl_type)
     smpl_kwargs = {
-        "model_path": smpl_model_path or _default_smplx_model_path(),
+        "model_path": model_path,
         "gender": "neutral",
         "num_betas": 10,
         "batch_size": joints.shape[0],
         "use_pca": False,
     }
-    smpl_model = SMPLX(**smpl_kwargs).to(device)
+    smpl_model = SMPLX(**smpl_kwargs).to(device) if smpl_type == "smplx" else SMPLH(**smpl_kwargs).to(device)
     model_output = smpl_model(**smpl_params)
     verts = model_output.vertices
     faces = torch.from_numpy(smpl_model.faces).long().to(verts.device)
@@ -384,22 +505,43 @@ def motion_vis(
     else:
         output_video_path = os.path.join(output_dir, f"{motion_name}_depth.mp4")
 
-    render_and_save(
-        verts=verts[None],
-        faces=faces,
-        R=R,
-        T=T,
-        width=width,
-        height=height,
-        focal=focal,
-        batch_size=batch_size,
-        fps=fps,
-        output_path=output_video_path,
-        motion_name=motion_name,
-        verbose=verbose,
-    )
-    if verbose:
-        print(f"Visualization saved at: {output_video_path}")
+    # Generate overlay video if RGB video provided
+    if video_file is not None and os.path.exists(video_file):
+        overlay_path = os.path.join(output_dir, f"{motion_name}_overlay.mp4")
+        render_and_save_overlay(
+            verts=verts[None],
+            faces=faces,
+            R=R,
+            T=T,
+            rgb_video_path=video_file,
+            width=width,
+            height=height,
+            focal=focal,
+            batch_size=batch_size,
+            fps=fps,
+            output_path=overlay_path,
+            verbose=verbose,
+        )
+        if verbose:
+            print(f"Overlay visualization saved at: {overlay_path}")
+    else:
+        render_and_save(
+            verts=verts[None],
+            faces=faces,
+            R=R,
+            T=T,
+            width=width,
+            height=height,
+            focal=focal,
+            batch_size=batch_size,
+            fps=fps,
+            output_path=output_video_path,
+            motion_name=motion_name,
+            verbose=verbose,
+        )
+        if verbose:
+            print(f"Visualization saved at: {output_video_path}")
+
     return smpl_params, joints
 
 
@@ -407,10 +549,13 @@ def main():
     parser = argparse.ArgumentParser(description="Visualize Depth Maps from Motion File")
     parser.add_argument("--motion_file", type=str, required=True, help="Path to .pt motion file")
     parser.add_argument("--output_dir", type=str, required=True, help="Output directory for visualizations")
+    parser.add_argument("--video_file", type=str, default=None, help="Optional RGB video to overlay depth (overrides H/W/fps)")
+    parser.add_argument("--smpl_type", type=str, default="smplx", choices=["smplx", "smplh"], help="Body model type")
+    parser.add_argument("--smpl_model_path", type=str, default=None, help="Override body model directory")
     parser.add_argument("--batch_size", type=int, default=24, help="Batch size for rendering frames")
-    parser.add_argument("--H", type=int, default=1080, help="Image height")
-    parser.add_argument("--W", type=int, default=1920, help="Image width")
-    parser.add_argument("--fps", type=int, default=20, help="Frames per second for the output video")
+    parser.add_argument("--H", type=int, default=1080, help="Image height (ignored if video_file provided)")
+    parser.add_argument("--W", type=int, default=1920, help="Image width (ignored if video_file provided)")
+    parser.add_argument("--fps", type=int, default=20, help="Frames per second (ignored if video_file provided)")
     parser.add_argument("--recover_from_velocity", "-rfv", action="store_true", help="Recover params from velocity")
     parser.add_argument("--zero_trans", "-zt", action="store_true", help="Set translation to zero")
     parser.add_argument("--device", type=str, default="cuda:0", help="Device to run model on")
@@ -418,37 +563,22 @@ def main():
     args = parser.parse_args()
 
     device = args.device
-    if os.path.isdir(args.motion_file):
-        for root, _, files in os.walk(args.motion_file):
-            for file in files:
-                if file.endswith(".pt"):
-                    motion_vis(
-                        os.path.join(root, file),
-                        args.output_dir,
-                        args.batch_size,
-                        args.H,
-                        args.W,
-                        args.fps,
-                        None,
-                        args.recover_from_velocity,
-                        device=device,
-                        verbose=args.verbose,
-                        zero_trans=args.zero_trans,
-                    )
-    else:
-        motion_vis(
-            args.motion_file,
-            args.output_dir,
-            args.batch_size,
-            args.H,
-            args.W,
-            args.fps,
-            None,
-            args.recover_from_velocity,
-            device=device,
-            verbose=args.verbose,
-            zero_trans=args.zero_trans,
-        )
+    motion_vis(
+        args.motion_file,
+        args.output_dir,
+        args.batch_size,
+        args.H,
+        args.W,
+        args.fps,
+        None,
+        args.recover_from_velocity,
+        device=device,
+        verbose=args.verbose,
+        zero_trans=args.zero_trans,
+        video_file=args.video_file,
+        smpl_model_path=args.smpl_model_path,
+        smpl_type=args.smpl_type,
+    )
 
 
 if __name__ == "__main__":

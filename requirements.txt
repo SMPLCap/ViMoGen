@@ -22,3 +22,8 @@ natsort
 
 # Body modeling
 smplx
+
+# MBench evaluation
+google-genai 
+imageio[ffmpeg]
+pyrender

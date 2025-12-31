@@ -4,12 +4,14 @@ __pycache__
 checkpoints
 data/*
 !data/meta_info/
+data/meta_info/ViMoGen-228K_train.json
 !data/body_models/
 data/body_models/*
 !data/body_models/smplx_root.pt
+!data/body_models/smpl/
+data/body_models/smpl/*.pkl
 exp
-mbench
-motion_gating
+evaluation_results
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

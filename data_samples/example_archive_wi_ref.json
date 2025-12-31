@@ -1,0 +1,54 @@
+[
+  {
+    "global_id": 6,
+    "id": 6,
+    "dimension": "Motion_Quality",
+    "motion_duration": 5,
+    "main_action": "stretching",
+    "prompt": "person stretching the whole right side by lifting the right arm and leaning sideways to the left.",
+    "prompt_motion_detailed": "The person stands tall, feet firmly planted shoulder-width apart, and slowly raises their right arm overhead, extending it fully. As they inhale deeply, they begin to lean gracefully to the left, feeling a gentle stretch along the entire right side of their body. Their left arm rests on their hip for balance, while their gaze follows the upward reach of their fingertips, maintaining a smooth, continuous motion that elongates the muscles with each breath.",
+    "prompt_video_detailed": "Full-body shot, stable camera, angled side view. A woman in a simple white tank top and black leggings stands on a smooth wooden floor in a serene studio with a pale blue backdrop. Her feet are shoulder-width apart as she gracefully raises her right arm overhead, extending it fully. As she inhales deeply, she leans to the left, her left hand resting on her hip for balance. Her gaze follows her fingertips, capturing the fluid motion and gentle stretch along her right side, each breath elongating her muscles.",
+    "motion_path": "data/mbench/wan2.2/6.pt",
+    "prompt_motion_detailed_wanvideot5_embed_path": "data/mbench/wanvideo_text_features/prompt_motion_detailed/6.pt",
+    "prompt_video_detailed_wanvideot5_embed_path": "data/mbench/wanvideo_text_features/prompt_video_detailed/6.pt"
+  },
+  {
+    "global_id": 11,
+    "id": 11,
+    "dimension": "Motion_Quality",
+    "motion_duration": 7,
+    "main_action": "squat,stand",
+    "prompt": "a person keeps his hands up to the sides at head level, squats almost to the floor and rises, squats again until thighs are parallel to the floor and quickly rises, and squats almost to the floor and rises.",
+    "prompt_motion_detailed": "The person positions their hands at head level, elbows bent, and begins a deep squat, lowering their body close to the floor with controlled precision. They rise smoothly, then descend again, this time halting when thighs are parallel to the ground, before quickly ascending. With focused intent, they perform another deep squat, nearing the floor, and rise with a steady, deliberate motion, maintaining balance and form throughout the sequence.",
+    "prompt_video_detailed": "Full-body shot, stable camera, side view. A woman in a grey tracksuit performs a series of squats on a simple gym mat, set against a plain white studio backdrop. Her hands are positioned at head level, elbows bent, as she lowers her body with precision, her thighs nearing the floor. She rises smoothly, then descends again, pausing when her thighs are parallel to the ground before ascending quickly. With focused intent, she completes another deep squat, maintaining balance and perfect form throughout the sequence.",
+    "motion_path": "data/mbench/wan2.2/11.pt",
+    "prompt_motion_detailed_wanvideot5_embed_path": "data/mbench/wanvideo_text_features/prompt_motion_detailed/11.pt",
+    "prompt_video_detailed_wanvideot5_embed_path": "data/mbench/wanvideo_text_features/prompt_video_detailed/11.pt"
+  },
+  {
+    "global_id": 0,
+    "id": 0,
+    "dimension": "Motion_Quality",
+    "motion_duration": 5,
+    "main_action": "squat,jump",
+    "prompt": "a person squats to almost parallel then jumps to the horizontally to the left.",
+    "prompt_motion_detailed": "The person lowers into a squat, thighs nearly parallel to the ground, maintaining a strong, upright posture. With a focused breath, they explode upward, propelling their body horizontally to the left. Arms swing powerfully, aiding the leap, while legs extend fully, ensuring a graceful, controlled landing, absorbing impact with bent knees.",
+    "prompt_video_detailed": "Full-body shot, stable camera, side view. A person in a grey tracksuit stands on a smooth, green park lawn. They lower into a squat, their thighs aligning nearly parallel to the ground, maintaining a strong, upright posture. With a focused breath, they burst upward, propelling their body horizontally to the left. Their arms swing powerfully, aiding the leap, while their legs extend fully. They land gracefully, absorbing the impact with bent knees, maintaining balance on the soft grass.",
+    "motion_path": "data/mbench/wan2.2/0.pt",
+    "prompt_motion_detailed_wanvideot5_embed_path": "data/mbench/wanvideo_text_features/prompt_motion_detailed/0.pt",
+    "prompt_video_detailed_wanvideot5_embed_path": "data/mbench/wanvideo_text_features/prompt_video_detailed/0.pt"
+  },
+  {
+    "global_id": 1,
+    "id": 1,
+    "dimension": "Motion_Quality",
+    "motion_duration": 3,
+    "main_action": "jumping jacks",
+    "prompt": "standing forward, hands are at the side moving toward sides of the head and back down while the legs are slightly jumping outwards. creating a jumping jack.",
+    "prompt_motion_detailed": "The person stands upright, feet together, arms relaxed at their sides. With a swift, coordinated motion, they spring into action, legs jumping outward to shoulder-width apart as arms simultaneously arc upward, fingertips brushing above their head. In a fluid return, legs snap back together while arms sweep gracefully back to their sides, completing the rhythmic jumping jack with precision and energy.",
+    "prompt_video_detailed": "Full-body shot, stable camera, front view. A person in a grey tracksuit stands on a smooth, wooden gym floor with a white wall backdrop. They begin a series of jumping jacks, springing energetically into the air. As their legs jump outward to shoulder-width apart, their arms arc upward, fingertips lightly brushing above their head. The movement is fluid and rhythmic, with legs snapping back together and arms sweeping down to their sides, showcasing precision and energy in each repetition.",
+    "motion_path": "data/mbench/wan2.2/1.pt",
+    "prompt_motion_detailed_wanvideot5_embed_path": "data/mbench/wanvideo_text_features/prompt_motion_detailed/1.pt",
+    "prompt_video_detailed_wanvideot5_embed_path": "data/mbench/wanvideo_text_features/prompt_video_detailed/1.pt"
+  }
+]
