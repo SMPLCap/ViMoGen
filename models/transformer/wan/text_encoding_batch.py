@@ -61,9 +61,9 @@ if __name__ == "__main__":
     dataset = TextDataset(args.json_file, args.text_key)
     dataloader = torch.utils.data.DataLoader(
         dataset, 
-        batch_size=16,
+        batch_size=64,
         shuffle=False,
-        num_workers=2,
+        num_workers=8,
         pin_memory=True if device == "cuda" else False
     )
 
@@ -84,6 +84,11 @@ if __name__ == "__main__":
         batch_size = len(texts)  # Actual size might be < 128 for last batch
         dataload_time = perf_counter() - dataload_start
         total_dataloader_time += dataload_time
+
+        # Skip computation if all targets for this batch already exist
+        if all(os.path.exists(path) for path in save_paths):
+            print(f"\nSkipping batch (Size: {batch_size}) - all embeddings already saved.")
+            continue
 
         # Measure prompt embedding time
         prompt_start = perf_counter()
@@ -118,11 +123,11 @@ if __name__ == "__main__":
     # Print overall summary
     print(f"\nOverall Summary:")
     print(f"Total Dataloader Time: {total_dataloader_time:.4f} seconds")
-    print(f"Average Dataloader Time per Batch: {total_dataloader_time/total_batches:.4f} seconds")
+    print(f"Average Dataloader Time per Batch: {total_dataloader_time/total_batches:.4f} seconds" if total_batches else "Average Dataloader Time per Batch: N/A")
     print(f"Total Prompt Embedding Time: {total_prompt_time:.4f} seconds")
-    print(f"Average Prompt Embedding Time per Batch: {total_prompt_time/total_batches:.4f} seconds")
+    print(f"Average Prompt Embedding Time per Batch: {total_prompt_time/total_batches:.4f} seconds" if total_batches else "Average Prompt Embedding Time per Batch: N/A")
     print(f"Total Data Saving Time: {total_save_time:.4f} seconds")
-    print(f"Average Data Saving Time per Batch: {total_save_time/total_batches:.4f} seconds")
+    print(f"Average Data Saving Time per Batch: {total_save_time/total_batches:.4f} seconds" if total_batches else "Average Data Saving Time per Batch: N/A")
     print(f"Total Processing Time: {total_dataloader_time + total_prompt_time + total_save_time:.4f} seconds")
     print(f"Number of Batches Processed: {total_batches}")
     print(f"Total Samples Processed: {len(dataset)}")
