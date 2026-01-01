@@ -26,10 +26,13 @@ Despite recent advances in 3D human motion generation (MoGen) on standard benchm
 
 Motivated by this observation, we present **ViMoGen**, a comprehensive framework that systematically transfers knowledge from ViGen to MoGen across three key pillars: **data**, **modeling**, and **evaluation**. 
 
-*   **ViMoGen-228K Dataset**: A large-scale dataset comprising 228,000 high-quality motion samples that integrates high-fidelity optical MoCap data with semantically annotated motions from web videos and synthesized samples.
+*   **[ViMoGen-228K Dataset](https://huggingface.co/datasets/wruisi/ViMoGen-228K)**: A large-scale dataset comprising 228,000 high-quality motion samples that integrates high-fidelity optical MoCap data with semantically annotated motions from web videos and synthesized samples.
 *   **ViMoGen Model**: A flow-matching-based diffusion transformer that unifies priors from MoCap data and ViGen models through gated multimodal conditioning.
 *   **MBench Benchmark**: A hierarchical benchmark designed for fine-grained evaluation across motion quality, prompt fidelity, and generalization ability.
 
+## News
+- [2025-12-19] We have released the ViMoGen-DiT pretrained weights along with the core inference pipeline.
+- [2025-12-18] We have released the [ViMoGen-228K Dataset](https://huggingface.co/datasets/wruisi/ViMoGen-228K) and [MBench leaderboard](https://huggingface.co/spaces/wruisi/MBench_leaderboard).
 ## Release Plan
 
 - [x] **Inference Code**: Core inference pipeline is released.
