@@ -136,7 +136,7 @@ def main():
     
     # Check optional camera params
     if 'focal_length' in hmr_data and 'width' in hmr_data and 'height' in hmr_data:
-        print(f"Camera: focal={hmr_data['focal_length']}, size={hmr_data['width']}x{hmr_data['height']}")
+        print(f"Camera: focal={hmr_data['focal_length'][0]}, size={hmr_data['width'][0]}x{hmr_data['height'][0]}")
     else:
         print("Camera params not provided, using identity intrinsic (reprojection not available)")
     

@@ -10,18 +10,21 @@ easydict
 diffusers>=0.31.0
 transformers>=4.40.0
 safetensors
+ftfy
 
 # Huggingface tokenizers
 tokenizers>=0.19.0
 
 # Logging and visualization
 tensorboard
+opencv-python
 
 # File utilities
 natsort
 
 # Body modeling
 smplx
+torchgeometry
 
 # MBench evaluation
 google-genai 

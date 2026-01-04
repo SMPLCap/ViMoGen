@@ -49,7 +49,7 @@ sh scripts/inference.sh smplest_x_h output_video.mp4 30
 
 Other HMR models (e.g., CameraHMR, 4DHumans, WHAM) can also be used.
 
-> ⚠️ **Important:** By default, SMPLest-X outputs rendered mesh overlays but does not save the raw SMPL-X parameters. You need to modify the inference script to export the required parameters. See **[Modifying SMPLest-X to Export Parameters](#modifying-smplest-x-to-export-parameters)** at the end of this document for step-by-step instructions.
+> ⚠️ **Important:** By default, SMPLest-X outputs rendered mesh overlays but does not save the raw SMPL-X parameters. Use the drop-in scripts in `motion_rep/smplest_x_scripts/` (see **[Modifying SMPLest-X to Export Parameters](#modifying-smplest-x-to-export-parameters)**) to export the required parameters.
 
 ### Required Output Format
 
@@ -175,126 +175,38 @@ This script:
 
 ## Modifying SMPLest-X to Export Parameters
 
-[SMPLest-X](https://github.com/SMPLCap/SMPLest-X) by default outputs rendered mesh overlays but does not save the raw SMPL-X parameters. This section provides instructions to modify SMPLest-X to export the required parameters for our motion representation pipeline.
+[SMPLest-X](https://github.com/SMPLCap/SMPLest-X) by default outputs rendered mesh overlays but does not save the raw SMPL-X parameters. To avoid manual code edits, we provide ready-to-use scripts under `motion_rep/smplest_x_scripts/` that you can copy into your SMPLest-X checkout.
 
-### Understanding the Focal Length
+### Use the Off-the-Shelf Scripts
 
-In `main/inference.py` (lines 141-142), the focal length is computed as:
+Assume your SMPLest-X repo is at `$SMPLestX_ROOT`:
 
-```python
-focal = [cfg.model.focal[0] / cfg.model.input_body_shape[1] * bbox[2], 
-         cfg.model.focal[1] / cfg.model.input_body_shape[0] * bbox[3]]
+```bash
+# In ViMoGen repo
+SMPLestX_ROOT=/path/to/SMPLest-X
+
+# Optional: backup originals
+cp "$SMPLestX_ROOT/main/inference.py" "$SMPLestX_ROOT/main/inference.py.bak"
+cp "$SMPLestX_ROOT/scripts/inference.sh" "$SMPLestX_ROOT/scripts/inference.sh.bak"
+
+# Install drop-in scripts
+cp motion_rep/smplest_x_scripts/inference.py "$SMPLestX_ROOT/main/inference.py"
+cp motion_rep/smplest_x_scripts/inference.sh "$SMPLestX_ROOT/scripts/inference.sh"
+chmod +x "$SMPLestX_ROOT/scripts/inference.sh"
 ```
 
-**Principle**: The model uses a virtual large focal length (default 5000) during training. At inference time, this is mapped back to the original image's pixel space using the detection bounding box size. The computed `focal[0]` (x-axis focal length) is what you need for reprojection.
+Then run SMPLest-X inference as usual (in the SMPLest-X repo):
 
-### Code Modifications
-
-Modify `main/inference.py` in the SMPLest-X repository:
-
-#### Step 1: Initialize Result Container
-
-Before the `for frame in tqdm(range(start, end)):` loop (around line 76), add:
-
-```python
-    # ... existing code ...
-    detector = YOLO(bbox_model)
-
-    start = int(args.start)
-    end = int(args.end) + 1
-
-    # [NEW] Initialize result container
-    all_results = {
-        'global_orient': [],
-        'body_pose': [],
-        'transl': [],
-        'focal_length': [],
-        'width': [],
-        'height': []
-    }
-
-    for frame in tqdm(range(start, end)):
-        # ... existing code ...
+```bash
+cd "$SMPLestX_ROOT"
+sh scripts/inference.sh smplest_x_h output_video.mp4 30
 ```
 
-#### Step 2: Collect Data in the Loop
+The exported parameters will be saved to:
 
-After `with torch.no_grad():` where `out` is obtained (around line 136), add data collection:
+- `$SMPLestX_ROOT/demo/<video_basename>_params.pt`
 
-```python
-            # ... existing code ...
-            # mesh recovery
-            with torch.no_grad():
-                out = demoer.model(inputs, targets, meta_info, 'test')
+### Notes
 
-            mesh = out['smplx_mesh_cam'].detach().cpu().numpy()[0]
-
-            # render mesh (existing focal computation)
-            focal = [cfg.model.focal[0] / cfg.model.input_body_shape[1] * bbox[2], 
-                     cfg.model.focal[1] / cfg.model.input_body_shape[0] * bbox[3]]
-            
-            # [NEW] Collect current frame data
-            # Only collect for bbox_id == 0 (first person) to avoid dimension mismatch
-            if bbox_id == 0:
-                # global_orient: (1, 3)
-                all_results['global_orient'].append(out['smplx_root_pose'].detach().cpu())
-                # body_pose: (1, 63)
-                all_results['body_pose'].append(out['smplx_body_pose'].detach().cpu())
-                # transl: (1, 3)
-                all_results['transl'].append(out['cam_trans'].detach().cpu())
-                # focal_length: scalar
-                all_results['focal_length'].append(torch.tensor([focal[0]], dtype=torch.float32))
-                # width, height
-                all_results['width'].append(torch.tensor([original_img.shape[1]], dtype=torch.float32))
-                all_results['height'].append(torch.tensor([original_img.shape[0]], dtype=torch.float32))
-
-            princpt = [cfg.model.princpt[0] / cfg.model.input_body_shape[1] * bbox[2] + bbox[0], 
-                       cfg.model.princpt[1] / cfg.model.input_body_shape[0] * bbox[3] + bbox[1]]
-            
-            # ... existing rendering code ...
-```
-
-#### Step 3: Save Parameters After Loop
-
-After the loop ends (around line 154), save all collected data:
-
-```python
-    # ... existing code (loop ends) ...
-        # save rendered image
-        frame_name = os.path.basename(img_path)
-        cv2.imwrite(os.path.join(output_folder, frame_name), vis_img[:, :, ::-1])
-
-    # [NEW] Save all parameters to .pt file after loop
-    print(f"Saving parameters to {output_folder}...")
-    
-    # Concatenate data to form (T, ...) shape
-    final_dict = {}
-    if len(all_results['global_orient']) > 0:
-        for k, v in all_results.items():
-            final_dict[k] = torch.cat(v, dim=0)
-        
-        # Save path
-        pt_save_path = os.path.join(output_folder, f'{args.file_name}_params.pt')
-        torch.save(final_dict, pt_save_path)
-        print(f"Successfully saved parameters to: {pt_save_path}")
-    else:
-        print("No parameters collected (maybe no person detected).")
-
-if __name__ == "__main__":
-    main()
-```
-
-### Output Format
-
-The saved `.pt` file will contain:
-
-| Key | Shape | Description |
-| --- | ----- | ----------- |
-| `global_orient` | (T, 3) | Root orientation (axis-angle) |
-| `body_pose` | (T, 63) | Body pose (21 joints × 3, axis-angle) |
-| `transl` | (T, 3) | Translation in camera coordinates |
-| `focal_length` | (T, 1) | Estimated focal length per frame (pixels) |
-| `width` | (T, 1) | Image width |
-| `height` | (T, 1) | Image height |
-
-This format is fully compatible with our `convert_hmr_to_motion.py` script.
+- `motion_rep/smplest_x_scripts/inference.sh` enables `--retarget_cam` by default, which retargets `transl` so all frames share a fixed camera (focal from the first frame, principal point at image center). The raw per-frame camera values are kept in `*_raw` fields in the exported `.pt`.
+- For multi-person videos, only the first detected person (`bbox_id == 0`) is exported to ensure a fixed sequence length.
